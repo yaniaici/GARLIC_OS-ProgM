@@ -152,4 +152,33 @@ _gg_posicionVentana:
 	
     pop {r1-r5, pc}                @; Restauramos los registros y regresamos de la función
 
+	@; Nueva función GARLIC_setChar para definir caracteres personalizados
+	.global _ga_setChar
+_ga_setChar:
+    push {r4-r6, lr}           @; Guardar registros de trabajo y lr en la pila
+    
+    mov r4, r0                 @; r4 = n (número de carácter entre 128 y 255)
+    mov r5, r1                 @; r5 = buffer (puntero a la matriz 8x8)
+    
+    @; Verificar si el número de carácter está en el rango 128-255
+    cmp r4, #128             
+    blt .fin_setChar           @; Si n < 128, salir (no válido)
+    cmp r4, #255
+    bgt .fin_setChar           @; Si n > 255, salir (no válido)
+    
+    @; Calcular la dirección base para almacenar el carácter
+    ldr r6, =0x06012000        @; Ajusta la dirección base según el mapa de memoria
+    sub r4, #128               @; Restar 128 para indexar en el mapa de caracteres personalizados
+    mov r4, r4, lsl #6         @; Multiplicar por 64 (8x8 bytes = 64 bytes por carácter)
+    add r6, r4                 @; r6 apunta al inicio del área de almacenamiento de este carácter
+    
+    @; Llamar a _gs_copiaMem para copiar el buffer de 64 bytes a VRAM
+    mov r0, r5                 @; Dirección fuente (buffer)
+    mov r1, r6                 @; Dirección destino (VRAM)
+    mov r2, #64                @; Número de bytes a copiar
+    bl _gs_copiaMem            @; Llamada a la función de copia de memoria
+    
+.fin_setChar:
+    pop {r4-r6, pc}            @; Restaurar registros y regresar
+
 .end

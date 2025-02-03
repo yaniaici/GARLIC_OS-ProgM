@@ -1,27 +1,31 @@
-#include <GARLIC_API.h>  
+#include <GARLIC_API.h>
 
 int _start(int arg) {
-    int velocidad_inicial = 0;  // velocidad inicial en unidades por segundo
-    int aceleracion = 10;       // aceleraci髇 constante en unidades por segundo^2
-    int tiempo_ms = 5000;       // tiempo en milisegundos
-    int tiempo_seg;             // tiempo en segundos
-    int velocidad_final;        // velocidad final en unidades por segundo
-    int posicion;               // posici髇 final en unidades
+    int velocidad_inicial = 0;  // Velocidad inicial en unidades por segundo
+    int aceleracion = 10;       // Aceleraci贸n constante en unidades por segundo^2
+    int tiempo_ms = 5000;       // Tiempo total en milisegundos
+    int tiempo_seg = tiempo_ms / 1000; // Tiempo total en segundos
+    int velocidad_intermedia;   // Velocidad en un momento dado
+    int posicion_intermedia;    // Posici贸n en un momento dado
     
-    // Convertir tiempo de milisegundos a segundos
-    tiempo_seg = tiempo_ms / 1000;
+    GARLIC_printf("Simulaci贸n de posici贸n y velocidad:\n");
+    GARLIC_printf("Tiempo total: %d segundos\n", tiempo_seg);
 
-    // Calcular velocidad final: vf = vi + a * t
-    velocidad_final = velocidad_inicial + (aceleracion * tiempo_seg);
+    // Bucle para calcular y mostrar resultados intermedios
+    for (int t = 0; t <= tiempo_seg; t++) {
+        // Calcular velocidad intermedia: v = vi + a * t
+        velocidad_intermedia = velocidad_inicial + (aceleracion * t);
+        
+        // Calcular posici贸n intermedia: x = vi * t + (1/2) * a * t^2
+        posicion_intermedia = (velocidad_inicial * t) + ((aceleracion * t * t) / 2);
 
-    // Calcular la posici髇 final: x = vi * t + (1/2) * a * t^2
-    // Nota: Para evitar flotantes, usamos aproximaci髇 en la parte de (1/2) * a * t^2.
-    posicion = (velocidad_inicial * tiempo_seg) + ((aceleracion * tiempo_seg * tiempo_seg) / 2);
+        // Imprimir resultados intermedios
+        GARLIC_printf("Tiempo: %d segundos\n", t);
+        GARLIC_printf("  Velocidad: %d unidades/segundo\n", velocidad_intermedia);
+        GARLIC_printf("  Posici贸n: %d unidades\n", posicion_intermedia);
+    }
 
-    // Imprimir resultados
-    GARLIC_printf("Tiempo: %d segundos\n", tiempo_seg);
-    GARLIC_printf("Velocidad final: %d unidades/segundo\n", velocidad_final);
-    GARLIC_printf("Posici髇 final: %d unidades\n", posicion);
-
+    // Imprimir resultados finales
+    GARLIC_printf("C谩lculos completados.\n");
     return 0;
 }

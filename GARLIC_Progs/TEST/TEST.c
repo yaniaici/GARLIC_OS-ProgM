@@ -1,33 +1,41 @@
-#include <GARLIC_API.h>  
+#include "GARLIC_API.h"  /* Definición de las funciones API de GARLIC */
 
-int _start() {
-    char *filename = "/Datos/testfile.txt";  // Nombre del archivo a abrir
-    GARLIC_FILE *file;                // Puntero de archivo de tipo GARLIC_FILE*
-    unsigned int bytesRead;
-    char buffer[128];                 // Buffer para leer datos del archivo
+int _start(int arg)  /* Función de inicio : no se usa 'main' */
+{
+    char buffer[128];  // Buffer para almacenar cada línea
+    int bytesRead;
+    FILE_GARLIC *f;
 
-    // Intentar abrir el archivo en modo lectura
-    file = GARLIC_fopen(filename, "r");
-    if (file == (void*)0) {           // Usamos (void*)0 en lugar de NULL
-        GARLIC_printf("Error: No se pudo abrir el archivo %s para lectura.\n", filename);
-        return 1;  // Terminar con error si no se pudo abrir
+    // Validar argumento dentro del rango permitido
+    if (arg < 0) arg = 0;
+    else if (arg > 3) arg = 3;
+
+    // Mensaje inicial
+    GARLIC_printf("-- Programa TEST -  PID (%d) --\n", GARLIC_pid());
+
+    // Abrir el archivo
+    f = GARLIC_fopen("file0", "r");
+    GARLIC_printf("-- Archivo Abierto --\n");
+    if (f == 0) {
+        GARLIC_printf("-- No encontrado--\n");
+        return 0;
+    } else {
+        GARLIC_printf("-- File opened: %x --\n", f);
     }
 
-    GARLIC_printf("Archivo %s abierto correctamente para lectura.\n", filename);
+    GARLIC_printf("\n=== Contenido del archivo ===\n");
 
-    // Leer y procesar el archivo
-    while ((bytesRead = GARLIC_fread(buffer, 1, sizeof(buffer), file)) > 0) {
-        // Procesa los datos leídos en buffer, si es necesario
-        GARLIC_printf("Se leyeron %u bytes del archivo.\n", bytesRead);
+    // Leer y mostrar el contenido línea por línea
+    while ((bytesRead = GARLIC_fread(buffer, 1, sizeof(buffer) - 1, f)) > 0) {
+        buffer[bytesRead] = '\0';  // Asegurar terminación de cadena
+        GARLIC_printf("%s", buffer);  // Mostrar la línea
     }
 
-    // Intentar cerrar el archivo
-    if (GARLIC_fclose(file) != 0) {
-        GARLIC_printf("Error: No se pudo cerrar el archivo %s.\n", filename);
-        return 1;  // Terminar con error si no se pudo cerrar
-    }
+    GARLIC_printf("\n=== Fin del archivo ===\n");
 
-    GARLIC_printf("Archivo %s cerrado correctamente.\n", filename);
+    // Cerrar el archivo
+    GARLIC_fclose(f);
+    GARLIC_printf("-- Archivo cerrado --\n");
 
-    return 0;  // Terminar exitosamente
+    return 0;
 }

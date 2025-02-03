@@ -1,12 +1,12 @@
 /*------------------------------------------------------------------------------
 
 	"garlic_system.h" : definiciones de las variables globales, funciones y
-						rutinas del sistema operativo GARLIC (versi�n 1.0)
+						rutinas del sistema operativo GARLIC (versi�n 2.0)
 
 	Analista-programador: santiago.romani@urv.cat
 	Programador P: xxx.xxx@estudiants.urv.cat
 	Programador M: yyy.yyy@estudiants.urv.cat
-	Programador G: ivan.morillas@estudiants.urv.cat
+	Programador G: zzz.zzz@estudiants.urv.cat
 	Programador T: uuu.uuu@estudiants.urv.cat
 
 ------------------------------------------------------------------------------*/
@@ -28,6 +28,12 @@ extern int _gd_pidCount;	// Contador de PIDs: se incrementa cada vez que
 extern int _gd_tickCount;	// Contador de tics: se incrementa cada IRQ_VBL,
 							// permite contabilizar el paso del tiempo
 
+extern int _gd_sincMain;	// Sincronismos con programa principal:
+							// bit 0 = 1 indica si se ha acabado de calcular el
+							// 				el uso de la CPU,
+							// bits 1-15 = 1 indica si el proceso del z�calo
+							//				correspondiente ha terminado.
+
 extern int _gd_seed;		// Semilla para generaci�n de n�meros aleatorios
 							// (tiene que ser diferente de cero)
 
@@ -38,7 +44,6 @@ extern char _gd_qReady[16];	// Cola de READY (procesos preparados) : vector
 							// ordenado con _gd_nReady entradas, conteniendo
 							// los identificadores (0..15) de los z�calos de los
 							// procesos (m�x. 15 procesos + sistema operativo)
-
 
 typedef struct				// Estructura del bloque de control de un proceso
 {							// (PCB: Process Control Block)
@@ -57,9 +62,10 @@ extern garlicPCB _gd_pcbs[16];	// vector de PCBs de los procesos activos
 typedef struct				// Estructura del buffer de una ventana
 {							// (WBUF: Window BUFfer)
 	int pControl;			//	control de escritura en ventana
-							//		16 bits altos: n�mero de l�nea (0..23)
-							//		16 bits bajos: caracteres pendientes (0..32)
-	char pChars[32];		//	vector de 32 caracteres pendientes de escritura
+							//		4 bits altos: c�digo de color actual (0..3)
+							//		12 bits medios: n�mero de l�nea (0..23)
+							//		16 bits bajos: car�cteres pendientes (0..32)
+	char pChars[32];		//	vector de 32 car�cteres pendientes de escritura
 							//		indicando el c�digo ASCII de cada posici�n
 } PACKED garlicWBUF;
 
@@ -101,7 +107,7 @@ extern int _gp_numProc();
 	Par�metros:
 		funcion	->	direcci�n de memoria de entrada al c�digo del proceso
 		zocalo	->	identificador del z�calo (0..15)
-		nombre	->	string de 4 caracteres con el nombre en clave del programa
+		nombre	->	string de 4 car�cteres con el nombre en clave del programa
 		arg		->	argumento del programa (0..3)
 	Resultado:	0 si no hay problema, >0 si no se puede crear el proceso
 */
@@ -119,19 +125,31 @@ extern int _gp_crearProc(intFunc funcion, int zocalo, char *nombre, int arg);
 extern int _gm_initFS();
 
 
+/* _gm_listaProgs: devuelve una lista con los nombres en clave de todos
+				los programas que se encuentran en el directorio "Programas".
+				Se considera que un fichero es un programa si su nombre tiene
+				8 car�cteres y termina con ".elf"; se devuelven solo los
+				4 primeros car�cteres del nombre del fichero (nombre en clave),
+				que por convenio deben estar en may�sculas;
+				el resultado es un vector de strings (paso por referencia) y
+				el n�mero de programas detectados; */
+extern int _gm_listaProgs(char* progs[]);
+
+
 /* _gm_cargarPrograma: busca un fichero de nombre "(keyName).elf" dentro del
 					directorio "/Programas/" del sistema de ficheros y carga
 					los segmentos de programa a partir de una posici�n de
 					memoria libre, efectuando la reubicaci�n de las referencias
 					a los s�mbolos del programa seg�n el desplazamiento del
-					c�digo en la memoria destino;
+					c�digo y los datos en la memoria destino;
 	Par�metros:
-		keyName ->	string de 4 caracteres con el nombre en clave del programa
+		zocalo	->	�ndice del z�calo que indexar� el proceso del programa
+		keyName ->	string de 4 car�cteres con el nombre en clave del programa
 	Resultado:
 		!= 0	->	direcci�n de inicio del programa (intFunc)
 		== 0	->	no se ha podido cargar el programa
 */
-extern intFunc _gm_cargarPrograma(char *keyName);
+extern intFunc _gm_cargarPrograma(int zocalo, char *keyName);
 
 
 //------------------------------------------------------------------------------
@@ -141,10 +159,36 @@ extern intFunc _gm_cargarPrograma(char *keyName);
 /* _gm_reubicar: rutina de soporte a _gm_cargarPrograma(), que interpreta los
 					'relocs' de un fichero ELF contenido en un buffer *fileBuf,
 					y ajusta las direcciones de memoria correspondientes a las
-					referencias de tipo R_ARM_ABS32, restando la direcci�n de
-					inicio de segmento (pAddr) y sumando la direcci�n de destino
-					en la memoria (*dest) */
-extern void _gm_reubicar(char *fileBuf, unsigned int pAddr, unsigned int *dest);
+					referencias de tipo R_ARM_ABS32, a partir de las direcciones
+					de memoria destino de c�digo (dest_code) y datos (dest_data)
+					y seg�n el valor de las direcciones de las referencias a
+					reubicar y de las direcciones de inicio de los segmentos de
+					c�digo (pAddr_code) y datos (pAddr_data); */
+extern void _gm_reubicar(char *fileBuf,
+							unsigned int pAddr_code, unsigned int *dest_code,
+							unsigned int pAddr_data, unsigned int *dest_data);
+
+
+/* _gm_reservarMem: rutina para reservar un conjunto de franjas de memoria 
+				libres consecutivas que proporcionen un espacio suficiente para
+				albergar el tama�o de un segmento de c�digo o datos del proceso
+				(seg�n indique tipo_seg), asignando al n�mero de z�calo que se
+				pasa por par�metro;
+				la rutina devuelve la primera direcci�n del espacio reservado; 
+				en el caso de que no quede un espacio de memoria consecutivo del
+				tama�o requerido, devuelve cero; */
+extern void * _gm_reservarMem(int z, int tam, unsigned char tipo_seg);
+
+
+/* _gm_liberarMem: rutina para liberar todas las franjas de memoria asignadas
+				al proceso del z�calo indicado por par�metro; */
+extern void _gm_liberarMem(int z);
+
+
+/* _gm_rsiTIMER1:	servicio de interrupciones del TIMER1 de la plataforma NDS,
+				que refrescar� peri�dicamente la informaci�n de la tabla de
+				procesos relativa al uso de la pila y el estado del proceso; */
+extern void _gm_rsiTIMER1();
 
 
 
@@ -152,7 +196,7 @@ extern void _gm_reubicar(char *fileBuf, unsigned int pAddr, unsigned int *dest);
 //	Funciones de gesti�n de gr�ficos (garlic_graf.c)
 //------------------------------------------------------------------------------
 
-/* _gg_iniGraf: inicializa el procesador gr�fico A para GARLIC 1.0 */
+/* _gg_iniGraf: inicializa el procesador gr�fico A para GARLIC 2.0 */
 extern void _gg_iniGrafA();
 
 
@@ -160,11 +204,11 @@ extern void _gg_iniGrafA();
 extern void _gg_generarMarco(int v);
 
 
-/* _gg_escribir: escribe una cadena de caracteres en la ventana indicada;
+/* _gg_escribir: escribe una cadena de car�cteres en la ventana indicada;
 	Par�metros:
 		formato	->	string de formato:
 					admite '\n' (salto de l�nea), '\t' (tabulador, 4 espacios)
-					y c�digos entre 32 y 159 (los 32 �ltimos son caracteres
+					y c�digos entre 32 y 159 (los 32 �ltimos son car�cteres
 					gr�ficos), adem�s de marcas de formato %c, %d, %h y %s (m�x.
 					2 marcas por string) 
 		val1	->	valor a sustituir en la primera marca de formato, si existe
@@ -174,7 +218,7 @@ extern void _gg_generarMarco(int v);
 		ventana	->	n�mero de ventana (0..3)
 */
 extern void _gg_escribir(char *formato, unsigned int val1, unsigned int val2,
-															   int ventana);
+																   int ventana);
 
 
 //------------------------------------------------------------------------------
@@ -182,15 +226,15 @@ extern void _gg_escribir(char *formato, unsigned int val1, unsigned int val2,
 //------------------------------------------------------------------------------
 
 /* _gg_escribirLinea: rutina de soporte a _gg_escribir(), para escribir sobre la
-					fila (f) de la ventana (v) los caracters pendientes (n) del
-					buffer de ventana correspondiente.
+					fila (f) de la ventana (v) los car�cteres pendientes (n) del
+					buffer de ventana correspondiente;
 */
 extern void _gg_escribirLinea(int v, int f, int n);
 
 
 /* desplazar: rutina de soporte a _gg_escribir(), para desplazar una posici�n
 					hacia arriba todas las filas de la ventana (v) y borrar el
-					contenido de la �ltima fila.
+					contenido de la �ltima fila;
 */
 extern void _gg_desplazar(int v);
 
@@ -203,9 +247,9 @@ extern void _gg_desplazar(int v);
 /* _gs_num2str_dec: convierte el n�mero pasado por valor en el par�metro num
 					a una representaci�n en c�digos ASCII de los d�gitos
 					decimales correspondientes, escritos dentro del vector de
-					caracteres numstr, que se pasa por referencia; el par�metro
+					car�cteres numstr, que se pasa por referencia; el par�metro
 					length indicar� la longitud del vector; la rutina coloca un
-					caracter centinela (cero) en la �ltima posici�n del vector
+					car�cter centinela (cero) en la �ltima posici�n del vector
 					(numstr[length-1]) y, a partir de la pen�ltima posici�n,
 					empieza a colocar los c�digos ASCII correspondientes a las
 					unidades, decenas, centenas, etc.; en el caso que despu�s de
@@ -213,14 +257,14 @@ extern void _gg_desplazar(int v);
 					vector, la rutina rellenar� dichas posiciones con espacios
 					en blanco y devolver� un cero; en el caso que NO hayan
 					suficientes posiciones para transcribir todo el n�mero, la
-					rutina abandonar� el c�lculo y devolver� un valor diferente
+					funci�n abandonar� el proceso y devolver� un valor diferente
 					de cero.
 		ATENCI�N:	solo procesa n�meros naturales de 32 bits SIN signo. */
 extern int _gs_num2str_dec(char * numstr, unsigned int length, unsigned int num);
 
 
 /* _gs_num2str_hex:	convierte el par�metro num en una representaci�n en c�digos
-					ASCII sobre el vector de caracteres numstr, en base 16
+					ASCII sobre el vector de car�cteres numstr, en base 16
 					(hexa), siguiendo las mismas reglas de gesti�n del espacio
 					del string que _gs_num2str_dec(), salvo que las posiciones
 					de m�s peso vac�as se rellenar�n con ceros, no con espacios
@@ -234,6 +278,51 @@ extern int _gs_num2str_hex(char * numstr, unsigned int length, unsigned int num)
 				alineadas a word */
 extern void _gs_copiaMem(const void *source, void *dest, unsigned int numBytes);
 
+
+/* _gs_borrarVentana: borra el contenido de la ventana que se pasa por par�metro,
+				as� como el campo de control del buffer de ventana
+				_gd_wbfs[ventana].pControl; la rutina puede operar en una
+				configuraci�n de 4 o 16 ventanas, seg�n el par�metro de modo;
+	Par�metros:
+		ventana ->	n�mero de ventana
+		modo 	->	(0 -> 4 ventanas, 1 -> 16 ventanas)
+*/
+extern void _gs_borrarVentana(int zocalo, int modo);
+
+
+/* _gs_iniGrafB: inicializa el procesador gr�fico B para GARLIC 2.0 */
+extern void _gs_iniGrafB();
+
+
+/* _gs_escribirStringSub: escribe un string (terminado con centinela cero) a
+				partir de la posici�n indicada por par�metros (fil, col), con el
+				color especificado, en la pantalla secundaria; */
+extern void _gs_escribirStringSub(char *string, int fil, int col, int color);
+
+
+/* _gs_dibujarTabla: dibujar la tabla de procesos; */
+extern void _gs_dibujarTabla();
+
+
+/* _gs_pintarFranjas: rutina para pintar las l�neas verticales correspondientes
+				a un conjunto de franjas consecutivas de memoria asignadas a un
+				segmento (de c�digo o datos) del z�calo indicado por par�metro.
+	Par�metros:
+		zocalo		->	el z�calo que reserva la memoria (0 para borrar)
+		index_ini	->	el �ndice inicial de las franjas
+		num_franjas	->	el n�mero de franjas a pintar
+		tipo_seg	->	el tipo de segmento reservado (0 -> c�digo, 1 -> datos)
+*/
+extern void _gs_pintarFranjas(unsigned char zocalo, unsigned short index_ini,
+							unsigned short num_franjas, unsigned char tipo_seg);
+
+
+/* _gs_representarPilas: rutina para para representar gr�ficamente la ocupaci�n
+				de las pilas de los procesos de usuario, adem�s de la pila del
+				proceso de control del sistema operativo, sobre la tabla de
+				control de procesos.
+*/
+extern void _gs_representarPilas();
 
 
 #endif // _GARLIC_SYSTEM_h

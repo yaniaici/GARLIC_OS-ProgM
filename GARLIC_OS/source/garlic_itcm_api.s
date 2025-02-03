@@ -1,7 +1,7 @@
 @;==============================================================================
 @;
-@;	"garlic_itcm_api.s":	código de las rutinas del API de GARLIC 1.0
-@;							(ver "GARLIC_API.h" para descripci�n de las
+@;	"garlic_itcm_api.s":	c�digo de las rutinas del API de GARLIC 2.0
+@;							(ver "GARLIC_API.h" para descripción de las
 @;							 funciones correspondientes)
 @;
 @;==============================================================================
@@ -10,7 +10,6 @@
 
 	.arm
 	.align 2
-
 
 
 	.global _ga_pid
@@ -41,7 +40,7 @@ _ga_random:
 
 
 	.global _ga_divmod
-	@;Parámetros
+	@;Par�metros
 	@; R0: unsigned int num
 	@; R1: unsigned int den
 	@; R2: unsigned int * quo
@@ -96,7 +95,7 @@ _ga_divmod:
 	@; R2: long long * quo
 	@; R3: unsigned int * mod
 	@;Resultado
-	@; R0: 0 si no hay problema, !=0 si hay error en la división
+	@; R0: 0 si no hay problema, !=0 si hay error en la divisi�n
 _ga_divmodL:
 	push {r4-r6, lr}
 	ldr r4, [r1]			@; R4 = denominador
@@ -119,7 +118,7 @@ _ga_divmodL:
 
 
 	.global _ga_printf
-	@;Parámetros
+	@;Par�metros
 	@; R0: char * format
 	@; R1: unsigned int val1 (opcional)
 	@; R2: unsigned int val2 (opcional)
@@ -127,11 +126,87 @@ _ga_printf:
 	push {r4, lr}
 	ldr r4, =_gd_pidz		@; R4 = direcci�n _gd_pidz
 	ldr r3, [r4]
-	and r3, #0x3			@; R3 = ventana de salida (zócalo actual MOD 4)
+	and r3, #0x3			@; R3 = ventana de salida (z�calo actual MOD 4)
+	bl _gg_escribir			@; llamada a la funci�n definida en "garlic_graf.c"
+	pop {r4, pc}
+
+
+	.global _ga_printchar
+	@;Par�metros
+	@; R0: int vx
+	@; R1: int vy
+	@; R2: char c
+	@; R3: int color
+_ga_printchar:
+	push {r4, lr}
+	add r3, r2, #32			@; R3 = c + 32, se transforma el código de baldosa
+							@;	en c�digo ASCII, para que _gg_escribir lo vuelva
+							@;	a transformar en c�digo de baldosa; (R3 pierde
+							@;	el c�digo de color que se pasa por parámetro,
+							@;	pero no importa porque el color no se utiliza)
+	mov r2, r1				@; R2 = vy
+	mov r1, r0				@; R1 = vx
+	ldr r4, =_gd_pidz
+	ldr r4, [r4]			@; R4 = _gd_pidz
+	ldr r0, =_gi_message	@; R0 = @ string para visualizar con _gg_escribir
+	strb r3, [r0, #22]		@; guardar codigo car�cter en posici�n 22 del str.
+	and r3, r4, #0x3		@; R3 = n�mero de ventana (num. z�calo % 4)
 	bl _gg_escribir
 	pop {r4, pc}
 
-.global _ga_fopen
+_gi_message:
+	.asciz "print char (%d, %d) :  \n"
+
+
+	.align 2
+	.global _ga_printmat
+	@;Par�metros
+	@; R0: int vx
+	@; R1: int vy
+	@; R2: char *m[]
+	@; R3: int color
+_ga_printmat:
+	push {r4-r5, lr}
+	ldr r5, =_gd_pidz		@; R5 = direcci�n _gd_pidz
+	ldr r4, [r5]
+	and r4, #0xf			@; R4 = ventana de salida (z�calo actual)
+	push {r4}				@; pasar 4� par�metro (n�m. ventana) por la pila
+	bl _gg_escribir
+	add sp, #4				@; eliminar 4� parámetro de la pila
+	pop {r4-r5, pc}
+
+
+	.global _ga_delay
+	@;Par�metros
+	@; R0: int nsec
+_ga_delay:
+	push {r2-r3, lr}
+	ldr r3, =_gd_pidz		@; R3 = direcci�n _gd_pidz
+	ldr r2, [r3]
+	and r2, #0xf			@; R2 = z�calo actual
+	cmp r0, #0
+	bhi .Ldelay1
+	bl _gp_WaitForVBlank	@; si nsec = 0, solo desbanca el proceso
+	b .Ldelay2				@; y salta al final de la rutina
+.Ldelay1:
+	cmp r0, #600
+	movhi r0, #600			@; limitar el n�mero de segundos a 600 (10 minutos)
+	@;bl _gp_retardarProc
+.Ldelay2:
+	pop {r2-r3, pc}
+
+
+	.global _ga_clear
+_ga_clear:
+	push {r0-r1, lr}
+	ldr r1, =_gd_pidz
+	ldr r0, [r1]
+	and r0, #0xf			@; R0 = z�calo actual
+	mov r1, #0				@; R1 = 0 -> 4 ventanas
+	bl _gs_borrarVentana
+	pop {r0-r1, pc}
+
+	.global _ga_fopen
 _ga_fopen:
    push {r4, lr}            @; Guardar r4 y lr en la pila
 
@@ -140,13 +215,12 @@ _ga_fopen:
     mov r1, r1                @; mode ya está en r1
 
     @; Llamar a fopen de nitroFS
-    bl fopen
+    bl GARLIC_fopen
 
     @; fopen devuelve un puntero FILE* en r0
     pop {r4, pc}              @; Restaurar r4 y regresar con el resultado en 
 
 	.global _ga_fclose
-
 _ga_fclose:
     push {r4, lr}             @; Guardar r4 y lr en la pila
 
@@ -154,13 +228,12 @@ _ga_fclose:
     mov r0, r0                 @; GARLIC_FILE* ya está en r0
 
     @; Llamar a fclose de nitroFS
-    bl fclose
+    bl GARLIC_fclose
 
     @; fclose devuelve un entero (0 si el cierre fue exitoso, EOF si hubo un error)
     pop {r4, pc}              @; Restaurar r4 y regresar
 
     .global _ga_fread
-
 _ga_fread:
     push {r4, lr}            @; Guardar r4 y lr en la pila
 
@@ -171,42 +244,27 @@ _ga_fread:
     mov r3, r3               @; puntero al archivo en r3
 
     @; Llamar a fread de nitroFS
-    bl fread
+    bl GARLIC_fread
 
     @; fread devuelve la cantidad de elementos leídos en r0
     pop {r4, pc}             @; Restaurar r4 y regresar con el resultado en r0
-
 	
-@; Nueva función GARLIC_setChar para definir caracteres personalizados
-    .global _ga_setChar
-_ga_setChar:
-    push {r4-r6, lr}           @; Guardar registros de trabajo y lr en la pila
+	
+	    .global _ga_fwrite
+_ga_fwrite:
+    push {r4, lr}            @; Guardar r4 y lr en la pila
 
-    mov r4, r0                 @; r4 = n (número de carácter entre 128 y 255)
-    mov r5, r1                 @; r5 = buffer (puntero a la matriz 8x8)
+    @; Pasar parámetros a fwrite según la convención de llamada ARM
+    mov r0, r0               @; buffer (origen) en r0
+    mov r1, r1               @; tamaño de cada elemento en r1
+    mov r2, r2               @; número de elementos a escribir en r2
+    mov r3, r3               @; puntero al archivo en r3
 
-    @; Verificar si el número de carácter está en el rango 128-255
-    cmp r4, #128
-    blt .fin_setChar           @; Si n < 128, salir (no válido)
-    cmp r4, #255
-    bgt .fin_setChar           @; Si n > 255, salir (no válido)
+    @; Llamar a fwrite de GARLIC
+    bl GARLIC_fwrite
 
-    @; Calcular la dirección base para almacenar el carácter
-    ldr r6, =0x06012000        @; Ajusta la dirección base según el mapa de memoria
-    sub r4, #128               @; Restar 128 para indexar en el mapa de caracteres personalizados
-    mov r4, r4, lsl #6         @; Multiplicar por 64 (8x8 bytes = 64 bytes por carácter)
-    add r6, r4                 @; r6 apunta al inicio del área de almacenamiento de este carácter
-
-    @; Llamar a _gs_copiaMem para copiar el buffer de 64 bytes a VRAM
-    mov r0, r5                 @; Dirección fuente (buffer)
-    mov r1, r6                 @; Dirección destino (VRAM)
-    mov r2, #64                @; Número de bytes a copiar
-    bl _gs_copiaMem            @; Llamada a la función de copia de memoria
-
-.fin_setChar:
-    pop {r4-r6, pc}            @; Restaurar registros y regresar
-
-
+    @; fwrite devuelve la cantidad de elementos escritos en r0
+    pop {r4, pc}             @; Restaurar r4 y regresar con el resultado en r0
 
 
 .end

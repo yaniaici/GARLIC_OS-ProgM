@@ -1,156 +1,389 @@
 /*------------------------------------------------------------------------------
 
-	"main.c" : fase 1 / programador G
+	"main.c" : fase 2 / progM
 
-	Programa de prueba de llamada de funciones gr醘icas de GARLIC 1.0,
-	pero sin cargar procesos en memoria ni multiplexaci髇.
+	Versi贸n final de GARLIC 2.0
+	(carga de programas con 2 segmentos, listado de programas, gesti贸n de
+	 franjas de memoria)
 
 ------------------------------------------------------------------------------*/
-#include <nds.h> 
+#include <nds.h>
 
-#include "garlic_system.h"	// definici髇 de funciones y variables de sistema
- 
-#include <GARLIC_API.h>		// inclusi髇 del API para simular un proceso
-
-void setChar();
-int hola(int);				// funci髇 que simula la ejecuci髇 del proceso
-extern void hola_m();
-extern int prnt(int);		// otra funci髇 (externa) de test correspondiente
-							// a un proceso de usuario
-
+#include "garlic_system.h"	// definici贸n de funciones y variables de sistema
 
 extern int * punixTime;		// puntero a zona de memoria con el tiempo real
 
-/* Inicializaciones generales del sistema Garlic */
-//------------------------------------------------------------------------------
-void inicializarSistema() {
-//------------------------------------------------------------------------------
-	int v;
-	
+const short divFreq1 = -33513982/(1024*7);		// frecuencia de TIMER1 = 7 Hz
 
-	_gg_iniGrafA();			// inicializar procesador gr醘ico A
-	for (v = 0; v < 4; v++)	// para todas las ventanas
-		_gd_wbfs[v].pControl = 0;		// inicializar los buffers de ventana
+
+
+/* gestionSincronismos:	funci贸n para detectar cu谩ndo un proceso ha terminado
+						su ejecuci贸n, consultando el bit i-茅ssimo de la
+						variable global _gd_sincMain; en caso de detecci贸n,
+						libera la memoria reservada para el proceso del z贸calo
+						i-茅ssimo y pone el bit de _gd_sincMain a cero.
+*/
+void gestionSincronismos()
+{
+	int i, mask;
 	
-	_gd_seed = *punixTime;	// inicializar semilla para n鷐eros aleatorios con
-	_gd_seed <<= 16;		// el valor de tiempo real UNIX, desplazado 16 bits
-	
-	if (!_gm_initFS()) {
-		GARLIC_printf("ERROR: 隆no se puede inicializar el sistema de ficheros!");
-		exit(0);
+	if (_gd_sincMain & 0xFFFE)		// si hay algun sincronismo pendiente
+	{
+		mask = 2;
+		for (i = 1; i <= 15; i++)
+		{
+			if (_gd_sincMain & mask)
+			{						// liberar la memoria del proceso terminado
+				_gm_liberarMem(i);
+				_gg_escribir("* proceso %d terminado\n", i, 0, 0);
+				_gs_dibujarTabla();
+				_gd_sincMain &= ~mask;		// poner bit de sincronismo a cero
+			}
+			mask <<= 1;
+		}
 	}
 }
 
 
-//------------------------------------------------------------------------------
-int main(int argc, char **argv) {
-//------------------------------------------------------------------------------
-	
-	inicializarSistema();
-	
-	_gg_escribir("********************************", 0, 0, 0);
-	_gg_escribir("*                              *", 0, 0, 0);
-	_gg_escribir("* Sistema Operativo GARLIC 1.0 *", 0, 0, 0);
-	_gg_escribir("*                              *", 0, 0, 0);
-	_gg_escribir("********************************", 0, 0, 0);
-	_gg_escribir("*** Inicio fase 1\n", 0, 0, 0);
-	
-	_gd_pidz = 6;	// simular z骳alo 6
-	hola_m();
-	_gd_pidz = 7;	// simular z骳alo 7
-	_gd_pidz = 5;	// simular z骳alo 5
 
-	_gg_escribir("*** Final fase 1_G\n", 0, 0, 0);
+/* esperaSegundos:	funci贸n para esperar un cierto n煤mero de segundos, usando
+					la variable global _gd_tickCount.
+*/
+void esperaSegundos(unsigned char nsecs)
+{
+	unsigned int mtics;
 
-	while (1)
+	mtics = _gd_tickCount + (nsecs * 60);
+	while (_gd_tickCount < mtics)		// esperar un cierto n煤mero de segundos
 	{
-		swiWaitForVBlank();
-	}							// parar el procesador en un bucle infinito
-	return 0;
+		_gp_WaitForVBlank();
+		gestionSincronismos();
+	}
 }
 
 
-/* Proceso de prueba */
-//------------------------------------------------------------------------------
-int hola(int arg) {
-//------------------------------------------------------------------------------
-	unsigned int i, j, iter;
-	
-	if (arg < 0) arg = 0;			// limitar valor m醲imo y 
-	else if (arg > 3) arg = 3;		// valor m韓imo del argumento
-	
-									// esccribir mensaje inicial
-	GARLIC_printf("-- Programa HOLA  -  PID (%d) --\n", GARLIC_pid());
-	
-	j = 1;							// j = c醠culo de 10 elevado a arg
-	for (i = 0; i < arg; i++)
-		j *= 10;
-						// c醠culo aleatorio del n鷐ero de iteraciones 'iter'
-	GARLIC_divmod(GARLIC_random(), j, &i, &iter);
-	iter++;							// asegurar que hay al menos una iteraci髇
-	
-	for (i = 0; i < iter; i++)		// escribir mensajes
-		GARLIC_printf("(%d)\t%d: Hello world!\n", GARLIC_pid(), i);
 
-	return 0;
+/* eliminaProc:	funci贸n para provocar la finalizaci贸n de un proceso de usuario;
+				si el z贸calo indicado por par谩metro contiene un proceso, libera
+				la entrada del vector de PCBs correspondiente y busca el z贸calo
+				en la cola de READY, para eliminar dicha entrada de la cola
+				(compact谩ndola), decrementar n煤mero de procesos en Ready,
+				resetear la ventana asociada, y eliminar la memoria reservada
+				para ese proceso.
+*/
+void eliminaProc(unsigned char z)
+{
+	unsigned char i, j;
+	
+	if (_gd_pcbs[z].PID != 0)
+	{
+		_gd_pcbs[z].PID = 0;
+		i = 0; j = 0;
+		while ((j == 0) && (i < _gd_nReady))
+		{
+			if (_gd_qReady[i] == z)		// eliminar el proceso de cola de READY
+			{
+				for (j = i; j < _gd_nReady; j++)	// compacta cola de READY
+					_gd_qReady[j] =_gd_qReady[j+1];
+				_gd_nReady--;
+			}
+			i++;
+		}
+		_gm_liberarMem(z);
+		_gg_escribir("* proceso %d destruido\n", z, 0, 0);
+		_gs_dibujarTabla();
+	}
 }
 
-/* Proceso de prueba */
-//------------------------------------------------------------------------------
-void setChar() {
-//------------------------------------------------------------------------------
-	unsigned char newChar[64] = {
-		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-		0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF,
-		0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0xFF,
-		0xFF, 0x00, 0xFF, 0x00, 0x00, 0xFF, 0x00, 0xFF,
-		0xFF, 0x00, 0xFF, 0x00, 0x00, 0xFF, 0x00, 0xFF,
-		0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0xFF,
-		0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF,
-		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
-	};
 
-	unsigned char n = 128;
 
-    GARLIC_setChar(n, newChar); // Definir el car醕ter
+
+/* test 0: 	test de obtenci贸n de los programas de usuario contenidos en el
+			directorio "/Programas/" del disco de la NDS, llamando a la
+			funci贸n _gm_listaProgs(); la funci贸n test0() muestra por pantalla
+			(ventana 0) la lista de programas obtenida, y verifica si en la
+			lista se encuentran 4 programas necesarios para realizar el resto
+			de tests; en caso negativo, muestra un mensaje de error y devuelve
+			cero; en caso positivo, devuelve 1.
+*/
+unsigned char test0()
+{
+	char *progs[16];	// se asume que para realizar este test nunca habr谩 m谩s
+						// de 16 programas de usuario contenidos en "/Programas/"
+	char *expected[4] = {"DESC", "LABE", "PONG", "PRNT"};
+	unsigned char num_progs, i, j, k;
+	unsigned char result = 1;
 	
-	unsigned char newChar2[64] = {
-		0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00,
-		0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF,
-		0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00,
-		0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF,
-		0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00,
-		0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF,
-		0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00,
-		0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF
-	};
-
-	n = 223;
-	
-	GARLIC_setChar(n, newChar2); // Definir el car醕ter
-
-    //GARLIC_printf("Caracter nuevo: \x21\n"); // Imprimir el car醕ter
-	GARLIC_printf("Caracter nuevo: \xA0\n"); // Imprimir el car醕ter
-	GARLIC_printf("Caracter nuevo: \xFF\n"); // Imprimir el car醕ter
+	_gg_escribir("\n** TEST 0: lista de programas **\n", 0, 0, 0);
+	num_progs = _gm_listaProgs(progs);
+	if (num_progs == 0)
+	{
+		_gg_escribir("\nERROR: NO hay programas disponibles!\n", 0, 0, 0);
+		result = 0;
+	}
+	else
+	{
+		k = 0;				// m谩scara de bits para los programas esperados
+		for (i = 0; i < num_progs; i++)
+		{
+			_gg_escribir((i < 10 ? "\t %d: %s\t" : "\t%d: %s\t"), i, (unsigned int) progs[i], 0);
+			j = 0;
+			while ((k != 15) && (j < 4))
+			{
+				if (((k & (1 << j)) == 0) && (strcmp(progs[i], expected[j]) == 0))
+					k |= (1 << j);		// activa el bit de un programa esperado
+				j++;
+			}
+		}
+		_gg_escribir((i & 1 ? "\n\n" : "\n"), 0, 0, 0);
+		if (k != 15)
+		{
+			_gg_escribir("\nERROR: Faltan los siguientes programas:\n", 0, 0, 0);
+			for (i = 0; i < 4; i++)
+			{
+				if ((k & (1 << i)) == 0)
+					_gg_escribir("\t%s", (unsigned int) expected[i], 0, 0);
+			}
+			_gg_escribir("\n", 0, 0, 0);
+			result = 0;
+		}
+	}
+	return result;
 }
-//------------------------------------------------------------------------------
 
-/* Programas de usuario */
-//------------------------------------------------------------------------------
-void hola_m() {
-	intFunc start;
-    // Carga de programa HOLA.elf
-    GARLIC_printf("*** Carga de programa CHAR.elf\n");
-    start = _gm_cargarPrograma("CHAR");
-    
-    if (start) {
-        GARLIC_printf("*** Pulse 'START' ::\n\n");
-        do {
-            swiWaitForVBlank();
-            scanKeys();
-        } while ((keysDown() & KEY_START) == 0);
-        start(1);  // llamada al proceso HOLA con argumento 1
-    } else {
-        GARLIC_printf("*** Programa \"CHAR\" NO cargado\n");
+
+
+
+/* test 1: 	test de carga de programas de usuario de forma consecutiva (DESC,
+			LABE, PRNT), sin fragmentaci贸n de la memoria, comprobando que 
+			funciona la carga de programas con uno o dos segmentos; esta
+			funci贸n de test espera a que PRNT acabe y elimina DESC, dejando
+			el programa LABE en marcha para crear un principio de fragmentaci贸n
+			externa; la funci贸n devuelve 0 si se han podido cargar los tres
+			programas, o 1 si ha habido algun problema con la carga de uno de
+			los programas.
+*/
+unsigned char test1()
+{
+	char *expected[3] = {"DESC", "LABE", "PRNT"};
+	intFunc start[3];
+	unsigned char i;
+	unsigned char result = 1;
+
+	_gg_escribir("\n** TEST 1: carga consecutiva\n\tDESC | LABE | PRNT **\n", 0, 0, 0);
+	for (i = 0; i < 3; i++)
+	{
+		start[i] = _gm_cargarPrograma(i+1, expected[i]);
+	}
+	if (start[0] && start[1] && start[2])	// verficaci贸n de carga
+	{
+		for (i = 0; i < 3; i++)		// se asume que siempre se podr谩n crear
+		{							// los tres procesos asociados
+			_gp_crearProc(start[i], i+1, expected[i], i);
+		}
+		while (_gp_numProc() > 3)	// espera finalicaci贸n de PRNT
+		{
+			_gp_WaitForVBlank();
+			gestionSincronismos();
+		}
+		eliminaProc(1);		// fuerza la finalizaci贸n de DESC (para acelerar el test)
+	}
+	else
+	{
+		_gg_escribir("\nERROR: algun programa no se ha podido cargar!\n", 0, 0, 0);
+		result = 0;
+	}
+	return result;
+}
+
+
+
+
+/* test 2: 	test de carga de programas de usuario de forma NO consecutiva,
+			aprovechando la fragmentaci贸n externa generada en el test 1;
+			se carga el programa PONG para limitar el primer espacio de memoria
+			disponible, y despu茅s se carga el DESC de manera que primero se
+			cargar谩 el segmento de c贸digo y despu茅s el segmento de datos despu茅s
+			de la memoria reservada para el programa LABE (en el test anterior);
+			si el DESC funciona correctamente, la reubicaci贸n habr谩 funcionado
+			para segmentos de c贸digo y datos separados (no consecutivos);
+			despu茅s de un cierto tiempo, la funci贸n eliminar谩 el PONG e
+			intentar谩 cargar otro LABE, el cual cargar谩 el segmento de datos
+			en posiciones inferiores a las del segmento de c贸digo; la funci贸n
+			devuelve 0 si se han podido cargar los tres programas, o 1 si ha
+			habido algun problema con la carga de uno de los programas.
+*/
+unsigned char test2()
+{
+	char *expected[3] = {"PONG", "DESC", "LABE"};
+	unsigned char zoc[3] = {5, 11, 9};
+	intFunc start[3];
+	unsigned char result = 0;
+
+	_gg_escribir("\n** TEST 2: carga no consecutiva\n\tPONG | DESC **\n", 0, 0, 0);
+	start[0] = _gm_cargarPrograma(zoc[0], expected[0]);
+	start[1] = _gm_cargarPrograma(zoc[1], expected[1]);
+	if (start[0] && start[1])		// verficaci贸n de carga
+	{
+		_gp_crearProc(start[0], zoc[0], expected[0], 0);
+		_gp_crearProc(start[1], zoc[1], expected[1], 3);
+		esperaSegundos(6);
+		eliminaProc(zoc[0]);		// elimina PONG
+		_gg_escribir("\n** TEST 2: carga no consecutiva\n\tLABE **\n", 0, 0, 0);
+		start[2] = _gm_cargarPrograma(zoc[2], expected[2]);
+		if (start[2])
+		{
+			_gp_crearProc(start[2], zoc[2], expected[2], 3);
+			result = 1;
+		}
+	}
+	if (result == 0)
+	{
+		_gg_escribir("\nERROR: algun programa no se ha podido cargar!\n", 0, 0, 0);
+	}
+	return result;
+}
+
+void forzarFinalizacionProcesos() {
+    unsigned char i;
+    for (i = 1; i <= 15; i++) { // Asumiendo que los procesos de usuario est谩n en los z贸calos 1 a 15
+        if (_gd_pcbs[i].PID != 0) {
+            eliminaProc(i); // Finalizar el proceso en el z贸calo i si est谩 en ejecuci贸n
+        }
     }
+}
+
+/* test 3:  test para verificar la carga y ejecuci贸n de un programa espec铆fico,
+            TEST, que realiza operaciones de lectura y escritura utilizando
+            las funciones GARLIC_fopen, GARLIC_fread, GARLIC_fwrite y GARLIC_fclose.
+            El test carga este programa en un z贸calo espec铆fico, lo lanza, y espera a que finalice,
+            asegur谩ndose de que todo funcione correctamente. La funci贸n devuelve 0 si no se puede cargar o ejecutar el programa,
+            o 1 si se ejecuta correctamente.
+*/
+unsigned char test3() {
+    char *expected = "TEST";        // Nombre del programa a cargar
+    unsigned char zocalo = 7;      // Z贸calo donde se cargar谩 el programa
+    intFunc start = NULL;          // Direcci贸n de inicio del programa
+    unsigned char result = 0;      // Resultado del test
+
+    _gg_escribir("\n** TEST 3: carga y ejecuci贸n de TEST **\n", 0, 0, 0);
+
+    // Cargar el programa en memoria
+    start = _gm_cargarPrograma(zocalo, expected);
+
+    if (start) { // Verificar si la carga fue exitosa
+        // Crear el proceso asociado al programa TEST
+        _gp_crearProc(start, zocalo, expected, 1);
+		esperaSegundos(6);
+		eliminaProc(zocalo);		
+        // Confirmar el 茅xito de la ejecuci贸n
+        result = 1;
+		_gp_WaitForVBlank();
+        _gg_escribir("\n** TEST 3: TEST ejecutado y cerrado correctamente **\n", 0, 0, 0);
+    } else {
+        // Indicar error en la carga o ejecuci贸n
+        _gg_escribir("\nERROR: El programa TEST no se pudo cargar!\n", 0, 0, 0);
+    }
+
+    return result;
+}
+
+
+/* test 4: 	test para verificar la carga y ejecuci贸n de un programa espec铆fico,
+			CPVA (Carga de Procesos con Velocidad y Aceleraci贸n), que simula
+			c谩lculos de movimiento rectil铆neo uniforme acelerado; el test carga
+			este programa en un z贸calo espec铆fico, lo lanza, y espera a que
+			finalice, asegur谩ndose de que todo funcione correctamente.
+			La funci贸n devuelve 0 si no se puede cargar o ejecutar el programa,
+			o 1 si se ejecuta correctamente.
+*/
+unsigned char test4() {
+    char *expected = "CPVA";        // Nombre del programa a cargar
+    unsigned char zocalo = 7;      // Z贸calo donde se cargar谩 el programa
+    intFunc start = NULL;          // Direcci贸n de inicio del programa
+    unsigned char result = 0;      // Resultado del test
+
+    _gg_escribir("\n** TEST 4: carga y ejecuci贸n de CPVA **\n", 0, 0, 0);
+
+    // Cargar el programa en memoria
+    start = _gm_cargarPrograma(zocalo, expected);
+
+    if (start) { // Verificar si la carga fue exitosa
+        // Crear el proceso asociado al programa CPVA
+        _gp_crearProc(start, zocalo, expected, 1);
+
+        // Liberar la memoria y cerrar el proceso CPVA
+        eliminaProc(zocalo);
+
+        // Confirmar el 茅xito de la ejecuci贸n
+        result = 1;
+		_gp_WaitForVBlank();
+        _gg_escribir("\n** TEST 4: CPVA ejecutado y cerrado correctamente **\n", 0, 0, 0);
+    } else {
+        // Indicar error en la carga o ejecuci贸n
+        _gg_escribir("\nERROR: El programa CPVA no se pudo cargar!\n", 0, 0, 0);
+    }
+
+    return result;
+}
+
+
+
+
+
+
+/* Inicializaciones generales del sistema Garlic */
+void inicializarSistema()
+{
+	_gg_iniGrafA();			// inicializar procesadores gr谩ficos
+	_gs_iniGrafB();
+	_gs_dibujarTabla();
+
+	_gd_seed = *punixTime;	// inicializar semilla para n煤meros aleatorios con
+	_gd_seed <<= 16;		// el valor de tiempo real UNIX, desplazado 16 bits
+	
+	_gd_pcbs[0].keyName = 0x4C524147;	// "GARL"
+	
+	if (!_gm_initFS())
+	{
+		_gg_escribir("\nERROR: 隆no se puede inicializar  el sistema de ficheros!\n", 0, 0, 0);
+		exit(0);
+	}
+
+	irqInitHandler(_gp_IntrMain);	// instalar rutina principal interrupciones
+	irqSet(IRQ_VBLANK, _gp_rsiVBL);	// instalar RSI de vertical Blank
+	irqEnable(IRQ_VBLANK);			// activar interrupciones de vertical Blank
+	
+	irqSet(IRQ_TIMER1, _gm_rsiTIMER1);
+	irqEnable(IRQ_TIMER1);				// instalar la RSI para el TIMER1
+	TIMER1_DATA = divFreq1; 
+	TIMER1_CR = 0xC3;  	// Timer Start | IRQ Enabled | Prescaler 3 (F/1024)
+	
+	REG_IME = IME_ENABLE;			// activar las interrupciones en general
+}
+
+
+int main(int argc, char **argv) {
+    inicializarSistema();
+    _gg_escribir("********************************", 0, 0, 0);
+    _gg_escribir("*                              *", 0, 0, 0);
+    _gg_escribir("* Sistema Operativo GARLIC 2.0 *", 0, 0, 0);
+    _gg_escribir("*                              *", 0, 0, 0);
+    _gg_escribir("********************************", 0, 0, 0);
+    _gg_escribir("*** Inicio fase 2 / ProgM\n", 0, 0, 0);
+
+    if (test0()) {
+        _gg_escribir("\n** TEST 0 completado correctamente **\n", 0, 0, 0);
+       } if (test1()) {
+            _gg_escribir("\n** TEST 1 completado correctamente **\n", 0, 0, 0);
+           } if (test2()) {
+                _gg_escribir("\n** TEST 2 completado correctamente **\n", 0, 0, 0);
+              }  if (test3()) {
+                    _gg_escribir("\n** TEST 3 completado correctamente **\n", 0, 0, 0);
+                   } if (test4()) {
+                        _gg_escribir("\n** TEST 4 completado correctamente! **\n", 0, 0, 0);
+                    }
+    _gg_escribir("\n*** Final fase 2 / ProgM\n", 0, 0, 0);
+    while (1) _gp_WaitForVBlank();
+    return 0;
 }

@@ -1,1 +1,2 @@
-garlic_dtcm.o: c:/URV/ESO/eso_15/GARLIC_OS/source/garlic_dtcm.s
+garlic_dtcm.o: \
+ /Users/yaniaici/Documents/UNIVERSIDAD/ESO/eso_15/GARLIC_OS/source/garlic_dtcm.s

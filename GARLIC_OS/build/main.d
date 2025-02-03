@@ -1,184 +1,126 @@
-main.o: c:/URV/ESO/eso_15/GARLIC_OS/source/main.c \
- c:/URV/bmde/devkitPro/libnds/include/nds.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/libversion.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/ndstypes.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/bios.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/ndstypes.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/card.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/ndstypes.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/debug.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/dma.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/interrupts.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/ipc.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/memory.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/system.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/timers.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/fifocommon.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/interrupts.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/touch.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/input.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/dynamicArray.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/linkedlist.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/background.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/video.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/sassert.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/memory.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/dma.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/boxtest.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/videoGL.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/cache.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/trig_lut.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/math.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/dynamicArray.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/cache.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/console.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/background.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/decompress.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/bios.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/exceptions.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/guitarGrip.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/image.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/pcx.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/input.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/touch.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/input.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/keyboard.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/math.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/paddle.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/pcx.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/piano.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/rumble.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/sassert.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/sound.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/sprite.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/system.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/window.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/sprite.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/trig_lut.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/video.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/videoGL.h \
- c:/URV/bmde/devkitPro/libnds/include/nds/arm9/nand.h \
- c:/URV/ESO/eso_15/GARLIC_OS/include/garlic_system.h \
- c:\urv\eso\eso_15\garlic_api\garlic_api.h
-
-c:/URV/bmde/devkitPro/libnds/include/nds.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/libversion.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/ndstypes.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/bios.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/ndstypes.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/card.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/ndstypes.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/debug.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/dma.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/interrupts.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/ipc.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/memory.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/system.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/timers.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/fifocommon.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/interrupts.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/touch.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/input.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/dynamicArray.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/linkedlist.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/background.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/video.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/sassert.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/memory.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/dma.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/boxtest.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/videoGL.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/cache.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/trig_lut.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/math.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/dynamicArray.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/cache.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/console.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/background.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/decompress.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/bios.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/exceptions.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/guitarGrip.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/image.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/pcx.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/input.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/touch.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/input.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/keyboard.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/math.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/paddle.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/pcx.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/piano.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/rumble.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/sassert.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/sound.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/sprite.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/system.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/window.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/sprite.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/trig_lut.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/video.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/videoGL.h:
-
-c:/URV/bmde/devkitPro/libnds/include/nds/arm9/nand.h:
-
-c:/URV/ESO/eso_15/GARLIC_OS/include/garlic_system.h:
-
-c:\urv\eso\eso_15\garlic_api\garlic_api.h:
+main.o: \
+ /Users/yaniaici/Documents/UNIVERSIDAD/ESO/eso_15/GARLIC_OS/source/main.c \
+ /opt/devkitpro/libnds/include/nds.h \
+ /opt/devkitpro/libnds/include/nds/libversion.h \
+ /opt/devkitpro/libnds/include/nds/ndstypes.h \
+ /opt/devkitpro/libnds/include/nds/bios.h \
+ /opt/devkitpro/libnds/include/nds/ndstypes.h \
+ /opt/devkitpro/libnds/include/nds/card.h \
+ /opt/devkitpro/libnds/include/nds/ndstypes.h \
+ /opt/devkitpro/libnds/include/nds/debug.h \
+ /opt/devkitpro/libnds/include/nds/dma.h \
+ /opt/devkitpro/libnds/include/nds/interrupts.h \
+ /opt/devkitpro/libnds/include/nds/ipc.h \
+ /opt/devkitpro/libnds/include/nds/memory.h \
+ /opt/devkitpro/libnds/include/nds/system.h \
+ /opt/devkitpro/libnds/include/nds/timers.h \
+ /opt/devkitpro/libnds/include/nds/fifocommon.h \
+ /opt/devkitpro/libnds/include/nds/interrupts.h \
+ /opt/devkitpro/libnds/include/nds/touch.h \
+ /opt/devkitpro/libnds/include/nds/input.h \
+ /opt/devkitpro/libnds/include/nds/sha1.h \
+ /opt/devkitpro/libnds/include/nds/arm9/dynamicArray.h \
+ /opt/devkitpro/libnds/include/nds/arm9/linkedlist.h \
+ /opt/devkitpro/libnds/include/nds/arm9/background.h \
+ /opt/devkitpro/libnds/include/nds/arm9/video.h \
+ /opt/devkitpro/libnds/include/nds/arm9/sassert.h \
+ /opt/devkitpro/libnds/include/nds/memory.h \
+ /opt/devkitpro/libnds/include/nds/dma.h \
+ /opt/devkitpro/libnds/include/nds/arm9/boxtest.h \
+ /opt/devkitpro/libnds/include/nds/arm9/videoGL.h \
+ /opt/devkitpro/libnds/include/nds/arm9/cache.h \
+ /opt/devkitpro/libnds/include/nds/arm9/trig_lut.h \
+ /opt/devkitpro/libnds/include/nds/arm9/math.h \
+ /opt/devkitpro/libnds/include/nds/arm9/dynamicArray.h \
+ /opt/devkitpro/libnds/include/nds/arm9/cache.h \
+ /opt/devkitpro/libnds/include/nds/arm9/console.h \
+ /opt/devkitpro/libnds/include/nds/arm9/background.h \
+ /opt/devkitpro/libnds/include/nds/arm9/decompress.h \
+ /opt/devkitpro/libnds/include/nds/bios.h \
+ /opt/devkitpro/libnds/include/nds/arm9/exceptions.h \
+ /opt/devkitpro/libnds/include/nds/arm9/guitarGrip.h \
+ /opt/devkitpro/libnds/include/nds/arm9/image.h \
+ /opt/devkitpro/libnds/include/nds/arm9/pcx.h \
+ /opt/devkitpro/libnds/include/nds/arm9/input.h \
+ /opt/devkitpro/libnds/include/nds/touch.h \
+ /opt/devkitpro/libnds/include/nds/input.h \
+ /opt/devkitpro/libnds/include/nds/arm9/keyboard.h \
+ /opt/devkitpro/libnds/include/nds/arm9/math.h \
+ /opt/devkitpro/libnds/include/nds/arm9/paddle.h \
+ /opt/devkitpro/libnds/include/nds/arm9/pcx.h \
+ /opt/devkitpro/libnds/include/nds/arm9/piano.h \
+ /opt/devkitpro/libnds/include/nds/arm9/rumble.h \
+ /opt/devkitpro/libnds/include/nds/arm9/sassert.h \
+ /opt/devkitpro/libnds/include/nds/arm9/sound.h \
+ /opt/devkitpro/libnds/include/nds/arm9/sprite.h \
+ /opt/devkitpro/libnds/include/nds/system.h \
+ /opt/devkitpro/libnds/include/nds/arm9/window.h \
+ /opt/devkitpro/libnds/include/nds/arm9/sprite.h \
+ /opt/devkitpro/libnds/include/nds/arm9/trig_lut.h \
+ /opt/devkitpro/libnds/include/nds/arm9/video.h \
+ /opt/devkitpro/libnds/include/nds/arm9/videoGL.h \
+ /opt/devkitpro/libnds/include/nds/arm9/nand.h \
+ /Users/yaniaici/Documents/UNIVERSIDAD/ESO/eso_15/GARLIC_OS/../GARLIC_API/GARLIC_API.h \
+ /Users/yaniaici/Documents/UNIVERSIDAD/ESO/eso_15/GARLIC_OS/include/garlic_system.h
+/opt/devkitpro/libnds/include/nds.h:
+/opt/devkitpro/libnds/include/nds/libversion.h:
+/opt/devkitpro/libnds/include/nds/ndstypes.h:
+/opt/devkitpro/libnds/include/nds/bios.h:
+/opt/devkitpro/libnds/include/nds/ndstypes.h:
+/opt/devkitpro/libnds/include/nds/card.h:
+/opt/devkitpro/libnds/include/nds/ndstypes.h:
+/opt/devkitpro/libnds/include/nds/debug.h:
+/opt/devkitpro/libnds/include/nds/dma.h:
+/opt/devkitpro/libnds/include/nds/interrupts.h:
+/opt/devkitpro/libnds/include/nds/ipc.h:
+/opt/devkitpro/libnds/include/nds/memory.h:
+/opt/devkitpro/libnds/include/nds/system.h:
+/opt/devkitpro/libnds/include/nds/timers.h:
+/opt/devkitpro/libnds/include/nds/fifocommon.h:
+/opt/devkitpro/libnds/include/nds/interrupts.h:
+/opt/devkitpro/libnds/include/nds/touch.h:
+/opt/devkitpro/libnds/include/nds/input.h:
+/opt/devkitpro/libnds/include/nds/sha1.h:
+/opt/devkitpro/libnds/include/nds/arm9/dynamicArray.h:
+/opt/devkitpro/libnds/include/nds/arm9/linkedlist.h:
+/opt/devkitpro/libnds/include/nds/arm9/background.h:
+/opt/devkitpro/libnds/include/nds/arm9/video.h:
+/opt/devkitpro/libnds/include/nds/arm9/sassert.h:
+/opt/devkitpro/libnds/include/nds/memory.h:
+/opt/devkitpro/libnds/include/nds/dma.h:
+/opt/devkitpro/libnds/include/nds/arm9/boxtest.h:
+/opt/devkitpro/libnds/include/nds/arm9/videoGL.h:
+/opt/devkitpro/libnds/include/nds/arm9/cache.h:
+/opt/devkitpro/libnds/include/nds/arm9/trig_lut.h:
+/opt/devkitpro/libnds/include/nds/arm9/math.h:
+/opt/devkitpro/libnds/include/nds/arm9/dynamicArray.h:
+/opt/devkitpro/libnds/include/nds/arm9/cache.h:
+/opt/devkitpro/libnds/include/nds/arm9/console.h:
+/opt/devkitpro/libnds/include/nds/arm9/background.h:
+/opt/devkitpro/libnds/include/nds/arm9/decompress.h:
+/opt/devkitpro/libnds/include/nds/bios.h:
+/opt/devkitpro/libnds/include/nds/arm9/exceptions.h:
+/opt/devkitpro/libnds/include/nds/arm9/guitarGrip.h:
+/opt/devkitpro/libnds/include/nds/arm9/image.h:
+/opt/devkitpro/libnds/include/nds/arm9/pcx.h:
+/opt/devkitpro/libnds/include/nds/arm9/input.h:
+/opt/devkitpro/libnds/include/nds/touch.h:
+/opt/devkitpro/libnds/include/nds/input.h:
+/opt/devkitpro/libnds/include/nds/arm9/keyboard.h:
+/opt/devkitpro/libnds/include/nds/arm9/math.h:
+/opt/devkitpro/libnds/include/nds/arm9/paddle.h:
+/opt/devkitpro/libnds/include/nds/arm9/pcx.h:
+/opt/devkitpro/libnds/include/nds/arm9/piano.h:
+/opt/devkitpro/libnds/include/nds/arm9/rumble.h:
+/opt/devkitpro/libnds/include/nds/arm9/sassert.h:
+/opt/devkitpro/libnds/include/nds/arm9/sound.h:
+/opt/devkitpro/libnds/include/nds/arm9/sprite.h:
+/opt/devkitpro/libnds/include/nds/system.h:
+/opt/devkitpro/libnds/include/nds/arm9/window.h:
+/opt/devkitpro/libnds/include/nds/arm9/sprite.h:
+/opt/devkitpro/libnds/include/nds/arm9/trig_lut.h:
+/opt/devkitpro/libnds/include/nds/arm9/video.h:
+/opt/devkitpro/libnds/include/nds/arm9/videoGL.h:
+/opt/devkitpro/libnds/include/nds/arm9/nand.h:
+/Users/yaniaici/Documents/UNIVERSIDAD/ESO/eso_15/GARLIC_OS/../GARLIC_API/GARLIC_API.h:
+/Users/yaniaici/Documents/UNIVERSIDAD/ESO/eso_15/GARLIC_OS/include/garlic_system.h:
