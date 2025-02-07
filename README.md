@@ -1,5 +1,3 @@
-### 📄 **README.md**
-```md
 # GarlicOS - Fase 2 🚀
 
 GarlicOS es un sistema operativo para Nintendo DS que implementa un **sistema de archivos en memoria RAM**. En la **Fase 2**, se ha desarrollado un sistema de ficheros propio basado en **memoria dinámica (heap)**, permitiendo la gestión de archivos sin acceso a disco.
